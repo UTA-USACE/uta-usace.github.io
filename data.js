@@ -1,4 +1,4 @@
-var trailData = {
+const trailData = {
   TX: [
   {
     "projectName": "DENISON DAM - LAKE TEXOMA, TX AND OK",
@@ -14,7 +14,7 @@ var trailData = {
     "length": 15,
     "eGain": 1286,
     "intensity": "moderate",
-    "infoLink": "",
+    "infoLink": "https://www.google.com/maps?q=33.85933,-96.83813",
     "comments": ""
   },
   {
@@ -31,7 +31,7 @@ var trailData = {
     "length": -1,
     "eGain": -1,
     "intensity": "",
-    "infoLink": "",
+    "infoLink": "https://www.google.com/search?q=Denison+Dam+Lake+Texoma+Buncombe+Creek+HOA+trail",
     "comments": ""
   },
   {
@@ -65,7 +65,7 @@ var trailData = {
     "length": -1,
     "eGain": -1,
     "intensity": "",
-    "infoLink": "",
+    "infoLink": "https://www.google.com/search?q=Pat+Mayse+Lake+Presbyterian+Church+trail",
     "comments": ""
   },
   {
@@ -82,7 +82,7 @@ var trailData = {
     "length": -1,
     "eGain": -1,
     "intensity": "",
-    "infoLink": "",
+    "infoLink": "https://www.google.com/search?q=Pat+Mayse+Lake+West+trail",
     "comments": ""
   },
   {
@@ -99,7 +99,7 @@ var trailData = {
     "length": -1,
     "eGain": -1,
     "intensity": "",
-    "infoLink": "",
+    "infoLink": "https://www.google.com/search?q=Pat+Mayse+Lake+East+trail",
     "comments": ""
   },
   {
@@ -116,7 +116,7 @@ var trailData = {
     "length": -1,
     "eGain": -1,
     "intensity": "",
-    "infoLink": "",
+    "infoLink": "https://www.google.com/search?q=Pat+Mayse+Lake+Overlook+trail",
     "comments": ""
   },
   {
@@ -133,7 +133,7 @@ var trailData = {
     "length": -1,
     "eGain": -1,
     "intensity": "",
-    "infoLink": "",
+    "infoLink": "https://www.google.com/search?q=Pat+Mayse+Lake+Methodist+Camp+trail",
     "comments": ""
   },
   {
@@ -150,7 +150,7 @@ var trailData = {
     "length": -1,
     "eGain": -1,
     "intensity": "",
-    "infoLink": "",
+    "infoLink": "https://www.google.com/search?q=Pat+Mayse+Lake+Lamar+Point+trail",
     "comments": ""
   },
   {
@@ -167,7 +167,7 @@ var trailData = {
     "length": -1,
     "eGain": -1,
     "intensity": "",
-    "infoLink": "",
+    "infoLink": "https://www.google.com/search?q=Pat+Mayse+Lake+Elks+Club+trail",
     "comments": ""
   },
   {
@@ -184,7 +184,7 @@ var trailData = {
     "length": -1,
     "eGain": -1,
     "intensity": "",
-    "infoLink": "",
+    "infoLink": "https://www.google.com/search?q=Pat+Mayse+Lake+Clay+Bluff+trail",
     "comments": ""
   },
   {
@@ -201,7 +201,7 @@ var trailData = {
     "length": -1,
     "eGain": -1,
     "intensity": "",
-    "infoLink": "",
+    "infoLink": "https://www.google.com/search?q=Pat+Mayse+Lake+Camp+Kiwanis+trail",
     "comments": ""
   },
   {
@@ -218,7 +218,7 @@ var trailData = {
     "length": -1,
     "eGain": -1,
     "intensity": "",
-    "infoLink": "",
+    "infoLink": "https://www.google.com/search?q=Pat+Mayse+Lake+Pentecostal+Church+trail",
     "comments": ""
   },
   {
@@ -235,7 +235,7 @@ var trailData = {
     "length": -1,
     "eGain": -1,
     "intensity": "",
-    "infoLink": "",
+    "infoLink":"https://www.google.com/search?q=Pat+Mayse+Lake+Sanders+Cove+trail",
     "comments": ""
   },
   {
@@ -252,7 +252,7 @@ var trailData = {
     "length": -1,
     "eGain": -1,
     "intensity": "",
-    "infoLink": "",
+    "infoLink": "https://www.google.com/search?q=Pat+Mayse+Lake+Stilling+Basin+trail",
     "comments": ""
   },
   {
@@ -269,7 +269,7 @@ var trailData = {
     "length": -1,
     "eGain": -1,
     "intensity": "",
-    "infoLink": "",
+    "infoLink": "https://www.google.com/search?q=Pat+Mayse+Lake+Texas+Parks+and+Wildlife+trail",
     "comments": ""
   },
   {
@@ -286,7 +286,7 @@ var trailData = {
     "length": -1,
     "eGain": -1,
     "intensity": "",
-    "infoLink": "",
+    "infoLink": "https://www.google.com/search?q=Pat+Mayse+Lake+Visitor+Center+trail",
     "comments": ""
   },
   {
@@ -303,7 +303,7 @@ var trailData = {
     "length": -1,
     "eGain": -1,
     "intensity": "",
-    "infoLink": "",
+    "infoLink":"https://www.google.com/search?q=Pat+Mayse+Lake+Boy+Scout+Camp+trail",
     "comments": ""
   }
 ],

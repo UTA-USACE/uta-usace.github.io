@@ -3,11 +3,10 @@
 // flatten all trails from all 4 states
 const trailsByState = {
   TX: trailData.TX || [],
-  AR: trailData.AR || [],
   OK: trailData.OK || [],
   KS: trailData.KS || []
 };
-const trails = [...trailsByState.TX, ...trailsByState.AR, ...trailsByState.OK, ...trailsByState.KS];
+const trails = [...trailsByState.TX, ...trailsByState.OK, ...trailsByState.KS];
 
 
 // ───────────────────────────────── TrailDetail (detail "page") ─────────────────────────────────
@@ -20,7 +19,6 @@ function TrailDetail(props) {
   // tiny helper: figure out which state a trail belongs to
   const getTrailStateCode = function (t) {
     if (trailsByState.TX.includes(t)) return "TX";
-    if (trailsByState.AR.includes(t)) return "AR";
     if (trailsByState.OK.includes(t)) return "OK";
     if (trailsByState.KS.includes(t)) return "KS";
     return null;
@@ -590,7 +588,6 @@ function TrailDirectory(props) {
     
     if (stateFilter === "All") stateMatch = true;
     else if (stateFilter === "TX" && trailsByState.TX.includes(t)) stateMatch = true;
-    else if (stateFilter === "AR" && trailsByState.AR.includes(t)) stateMatch = true;
     else if (stateFilter === "OK" && trailsByState.OK.includes(t)) stateMatch = true;
     else if (stateFilter === "KS" && trailsByState.KS.includes(t)) stateMatch = true;
     
@@ -963,7 +960,6 @@ function TrailDirectory(props) {
           },
             React.createElement("option", null, "All"),
             React.createElement("option", null, "TX"),
-            React.createElement("option", null, "AR"),
             React.createElement("option", null, "OK"),
             React.createElement("option", null, "KS")
           )
@@ -1131,7 +1127,6 @@ function TrailDirectory(props) {
           },
             React.createElement("option", { value: "All" }, "All States"),
             React.createElement("option", { value: "TX" }, "Texas"),
-            React.createElement("option", { value: "AR" }, "Arkansas"),
             React.createElement("option", { value: "OK" }, "Oklahoma"),
             React.createElement("option", { value: "KS" }, "Kansas")
           ),
@@ -1515,7 +1510,7 @@ function LandingPage(props) {
       React.createElement(
         "p",
         { className: "landing-sub" },
-        "Discover parks and trailheads across Texas, Oklahoma, Arkansas, and Kansas."
+        "Discover parks and trailheads across Texas, Oklahoma, and Kansas."
       ),
 
       React.createElement("div", { className: "landing-actions" },

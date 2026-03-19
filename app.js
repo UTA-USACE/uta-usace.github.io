@@ -5,9 +5,9 @@ const trailsByState = {
   TX: trailData.TX || [],
   AR: trailData.AR || [],
   OK: trailData.OK || [],
-  KA: trailData.KA || []
+  KS: trailData.KS || []
 };
-const trails = [...trailsByState.TX, ...trailsByState.AR, ...trailsByState.OK, ...trailsByState.KA];
+const trails = [...trailsByState.TX, ...trailsByState.AR, ...trailsByState.OK, ...trailsByState.KS];
 
 
 // ───────────────────────────────── TrailDetail (detail "page") ─────────────────────────────────
@@ -22,7 +22,7 @@ function TrailDetail(props) {
     if (trailsByState.TX.includes(t)) return "TX";
     if (trailsByState.AR.includes(t)) return "AR";
     if (trailsByState.OK.includes(t)) return "OK";
-    if (trailsByState.KA.includes(t)) return "KA";
+    if (trailsByState.KS.includes(t)) return "KS";
     return null;
   };
 
@@ -592,7 +592,7 @@ function TrailDirectory(props) {
     else if (stateFilter === "TX" && trailsByState.TX.includes(t)) stateMatch = true;
     else if (stateFilter === "AR" && trailsByState.AR.includes(t)) stateMatch = true;
     else if (stateFilter === "OK" && trailsByState.OK.includes(t)) stateMatch = true;
-    else if (stateFilter === "KA" && trailsByState.KA.includes(t)) stateMatch = true;
+    else if (stateFilter === "KS" && trailsByState.KS.includes(t)) stateMatch = true;
     
     
     if (!stateMatch) return false;
@@ -965,7 +965,7 @@ function TrailDirectory(props) {
             React.createElement("option", null, "TX"),
             React.createElement("option", null, "AR"),
             React.createElement("option", null, "OK"),
-            React.createElement("option", null, "KA")
+            React.createElement("option", null, "KS")
           )
         ),
 
@@ -1133,7 +1133,7 @@ function TrailDirectory(props) {
             React.createElement("option", { value: "TX" }, "Texas"),
             React.createElement("option", { value: "AR" }, "Arkansas"),
             React.createElement("option", { value: "OK" }, "Oklahoma"),
-            React.createElement("option", { value: "KA" }, "Kansas")
+            React.createElement("option", { value: "KS" }, "Kansas")
           ),
 
           // Difficulty chip

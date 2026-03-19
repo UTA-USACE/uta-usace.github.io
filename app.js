@@ -1,7 +1,13 @@
 // app.js
 
 // flatten all trails from all 4 states
-const trails = [...trailData.TX, ...trailData.AR, ...trailData.OK, ...trailData.KA];
+const trailsByState = {
+  TX: trailData.TX || [],
+  AR: trailData.AR || [],
+  OK: trailData.OK || [],
+  KA: trailData.KA || []
+};
+const trails = [...trailsByState.TX, ...trailsByState.AR, ...trailsByState.OK, ...trailsByState.KA];
 
 
 // ───────────────────────────────── TrailDetail (detail "page") ─────────────────────────────────
@@ -13,10 +19,10 @@ function TrailDetail(props) {
 
   // tiny helper: figure out which state a trail belongs to
   const getTrailStateCode = function (t) {
-    if (trailData.TX.includes(t)) return "TX";
-    if (trailData.AR.includes(t)) return "AR";
-    if (trailData.OK.includes(t)) return "OK";
-    if (trailData.KA.includes(t)) return "KA";
+    if (trailsByState.TX.includes(t)) return "TX";
+    if (trailsByState.AR.includes(t)) return "AR";
+    if (trailsByState.OK.includes(t)) return "OK";
+    if (trailsByState.KA.includes(t)) return "KA";
     return null;
   };
 
@@ -583,10 +589,10 @@ function TrailDirectory(props) {
     }
     
     if (stateFilter === "All") stateMatch = true;
-    else if (stateFilter === "TX" && trailData.TX.includes(t)) stateMatch = true;
-    else if (stateFilter === "AR" && trailData.AR.includes(t)) stateMatch = true;
-    else if (stateFilter === "OK" && trailData.OK.includes(t)) stateMatch = true;
-    else if (stateFilter === "KA" && trailData.KA.includes(t)) stateMatch = true;
+    else if (stateFilter === "TX" && trailsByState.TX.includes(t)) stateMatch = true;
+    else if (stateFilter === "AR" && trailsByState.AR.includes(t)) stateMatch = true;
+    else if (stateFilter === "OK" && trailsByState.OK.includes(t)) stateMatch = true;
+    else if (stateFilter === "KA" && trailsByState.KA.includes(t)) stateMatch = true;
     
     
     if (!stateMatch) return false;

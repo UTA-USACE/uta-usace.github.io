@@ -552,12 +552,12 @@
     }
 
     /* ───────── Landing Page ───────── */
-.landing-wrap{
-  height: calc(100vh - 53px);
+    .landing-wrap{
+  min-height: calc(100vh - 53px);
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding: 24px;
+  padding: 16px;
   overflow-y: auto;
 }
 
@@ -566,22 +566,24 @@
   max-width: 900px;
   background: #ffffff;
   border-radius: 20px;
-  padding: 22px;
+  padding: 18px;
   border: 1px solid #e5e7eb;
   box-shadow: 0 20px 40px rgba(15,23,42,0.08);
 }
 
 .landing-title{
   margin: 0 0 6px 0;
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   font-weight: 800;
   color: #2d5f2d;
+  line-height: 1.2;
 }
 
 .landing-sub{
   margin: 0 0 14px 0;
   color: #4b5563;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
+  line-height: 1.45;
 }
 
 .landing-actions{
@@ -591,23 +593,10 @@
   margin-bottom: 14px;
 }
 
-.btn-primary{
-  background: #2d5f2d;
-  color: white;
-  border: none;
-  border-radius: 999px;
-  padding: 10px 16px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
+.btn-primary,
 .btn-secondary{
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
-  border-radius: 999px;
+  min-height: 44px;
   padding: 10px 16px;
-  cursor: pointer;
-  font-weight: 600;
 }
 
 .nearby-grid{
@@ -620,14 +609,17 @@
 .nearby-item{
   border: 1px solid #e5e7eb;
   border-radius: 14px;
-  padding: 12px;
+  padding: 14px;
   background: #fafafa;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
-@media (max-width: 640px){
-  .nearby-grid{ grid-template-columns: 1fr; }
+.nearby-item:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(15,23,42,0.08);
+  border-color: #c8dcc0;
 }
-
 
 .landing-map {
   width: 100%;
@@ -639,9 +631,59 @@
   margin: 10px 0 12px;
 }
 
+@media (max-width: 768px){
+  .landing-wrap{
+    padding: 12px;
+  }
 
-@media (max-width: 640px){
-  .landing-map { height: 320px; }
+  .landing-card{
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .landing-title{
+    font-size: 1.2rem;
+  }
+
+  .landing-sub{
+    font-size: 0.88rem;
+  }
+
+  .landing-map{
+    height: 280px;
+  }
+
+  .nearby-grid{
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px){
+  .landing-wrap{
+    padding: 8px;
+  }
+
+  .landing-card{
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .landing-actions{
+    flex-direction: column;
+  }
+
+  .btn-primary,
+  .btn-secondary{
+    width: 100%;
+  }
+
+  .landing-map{
+    height: 240px;
+  }
+
+  .nearby-item{
+    padding: 12px;
+  }
 }
 
 

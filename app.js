@@ -1,30 +1,24 @@
 // app.js
 
-// flatten all trails from all 4 states
-const trailsByState = {
-  TX: trailData.TX || [],
-  OK: trailData.OK || [],
-  KS: trailData.KS || []
-};
-const trails = [...trailsByState.TX, ...trailsByState.OK, ...trailsByState.KS];
-
+const trails = [
+  ...(trailData.TX || []),
+  ...(trailData.OK || []),
+  ...(trailData.KA || [])
+];
 
 // ───────────────────────────────── TrailDetail (detail "page") ─────────────────────────────────
-// simple single-trail view; toggled from the directory list
 function TrailDetail(props) {
   const trail = props.trail;
   const onBack = props.onBack;
   const detailMapRef = React.useRef(null);
 
-  // tiny helper: figure out which state a trail belongs to
   const getTrailStateCode = function (t) {
-    if (trailsByState.TX.includes(t)) return "TX";
-    if (trailsByState.OK.includes(t)) return "OK";
-    if (trailsByState.KS.includes(t)) return "KS";
+    if ((trailData.TX || []).includes(t)) return "TX";
+    if ((trailData.OK || []).includes(t)) return "OK";
+    if ((trailData.KA || []).includes(t)) return "KA";
     return null;
   };
 
-  // a few other trails from the same state, for the bottom section
   const trailStateCode = getTrailStateCode(trail);
   const relatedTrails = trails
     .filter(function (t) {
@@ -32,10 +26,11 @@ function TrailDetail(props) {
     })
     .slice(0, 4);
 
-  // small map focused on this trailhead
   React.useEffect(() => {
     if (!trail) return;
     if (trail.lat === -100 || trail.long === -200) return;
+
+    let view = null;
 
     require(
       [
@@ -48,11 +43,17 @@ function TrailDetail(props) {
         if (!detailMapRef.current) return;
 
         const map = new Map({ basemap: "topo-vector" });
-        const view = new MapView({
+        view = new MapView({
           container: detailMapRef.current,
           map: map,
           center: [trail.long, trail.lat],
           zoom: 13
+        });
+
+        view.when(function () {
+          setTimeout(function () {
+            if (view) view.resize();
+          }, 150);
         });
 
         const graphicsLayer = new GraphicsLayer();
@@ -84,6 +85,17 @@ function TrailDetail(props) {
         graphicsLayer.add(graphic);
       }
     );
+
+    return function () {
+      if (view) {
+        view.container = null;
+        view.destroy();
+        view = null;
+      }
+      if (detailMapRef.current) {
+        detailMapRef.current.innerHTML = "";
+      }
+    };
   }, [trail]);
 
   return React.createElement(
@@ -104,7 +116,6 @@ function TrailDetail(props) {
       }
     },
 
-    // Back button
     React.createElement(
       "button",
       {
@@ -126,12 +137,10 @@ function TrailDetail(props) {
       "← Back to all trails"
     ),
 
-    // Header block: area + trail name
     React.createElement(
       "div",
       { style: { marginBottom: "10px" } },
 
-      // Area (small label)
       React.createElement(
         "div",
         {
@@ -146,7 +155,6 @@ function TrailDetail(props) {
         trail.areaName || "Trail area"
       ),
 
-      // Trail name
       React.createElement(
         "h1",
         {
@@ -162,7 +170,6 @@ function TrailDetail(props) {
       )
     ),
 
-    // Summary chips (length, elevation, intensity)
     React.createElement(
       "div",
       {
@@ -217,7 +224,6 @@ function TrailDetail(props) {
       )
     ),
 
-    // Divider
     React.createElement("hr", {
       style: {
         border: "none",
@@ -226,7 +232,6 @@ function TrailDetail(props) {
       }
     }),
 
-    // Main content row: left = info, right = map
     React.createElement(
       "div",
       {
@@ -238,7 +243,6 @@ function TrailDetail(props) {
         }
       },
 
-      // LEFT: all the text/info
       React.createElement(
         "div",
         { style: { flex: "1 1 280px", minWidth: "240px" } },
@@ -344,24 +348,24 @@ function TrailDetail(props) {
           )
       ),
 
-      // RIGHT: the small map
       React.createElement("div", {
         id: "detail-map",
         ref: detailMapRef,
         style: {
-          width: "360px",
+          width: "100%",
+          maxWidth: "420px",
+          minWidth: "240px",
           height: "260px",
           border: "1px solid #d1d5db",
           borderRadius: "12px",
           flexShrink: 0,
-          marginLeft: "4px",
+          marginLeft: "0",
           boxShadow: "0 2px 6px rgba(15,23,42,0.08)",
           overflow: "hidden"
         }
       })
     ),
 
-    // Other trails section so the bottom isn't empty
     relatedTrails.length > 0 &&
       React.createElement(
         "div",
@@ -411,7 +415,6 @@ function TrailDetail(props) {
         )
       ),
 
-    // Soft little footer line
     React.createElement(
       "p",
       {
@@ -426,8 +429,7 @@ function TrailDetail(props) {
   );
 }
 
-
-// ───────────────────────────────── TrailDirectory (existing list + big map) ─────────────────────────────────
+// ───────────────────────────────── TrailDirectory ─────────────────────────────────
 function TrailDirectory(props) {
   const [stateFilter, setStateFilter] = React.useState("All");
   const [bikingFilter, setBikingFilter] = React.useState("None");
@@ -439,33 +441,32 @@ function TrailDirectory(props) {
   const useLocationFilter = props.useLocationFilter;
   const [lengthOp, setLengthOp] = React.useState("None");
   const [lengthValue, setLengthValue] = React.useState("");
-
   const [eGainOp, setEGainOp] = React.useState("None");
   const [eGainValue, setEGainValue] = React.useState("");
   const [intensityFilter, setIntensityFilter] = React.useState("All");
   const [searchQuery, setSearchQuery] = React.useState("");
   const [sortBy, setSortBy] = React.useState("name");
-
   const [visibleCount, setVisibleCount] = React.useState(30);
   const listPanelRef = React.useRef(null);
 
   const [selectedTrail, setSelectedTrail] = React.useState(props.initialSelectedTrail || null);
   React.useEffect(function () {
-  setSelectedTrail(props.initialSelectedTrail || null);
+    setSelectedTrail(props.initialSelectedTrail || null);
   }, [props.initialSelectedTrail]);
+
   const [highlightedProject, setHighlightedProject] = React.useState(null);
 
-    const [isFilterModalOpen, setIsFilterModalOpen] = React.useState(false);
-    const [draftStateFilter, setDraftStateFilter] = React.useState(stateFilter);
-    const [draftBikingFilter, setDraftBikingFilter] = React.useState(bikingFilter);
-    const [draftEquestrianFilter, setDraftEquestrianFilter] = React.useState(equestrianFilter);
-    const [draftWheelchairFilter, setDraftWheelchairFilter] = React.useState(wheelchairFilter);
-    const [draftPetsFilter, setDraftPetsFilter] = React.useState(petsFilter);
-    const [draftLengthOp, setDraftLengthOp] = React.useState(lengthOp);
-    const [draftLengthValue, setDraftLengthValue] = React.useState(lengthValue);
-    const [draftEGainOp, setDraftEGainOp] = React.useState(eGainOp);
-    const [draftEGainValue, setDraftEGainValue] = React.useState(eGainValue);
-    const [draftIntensityFilter, setDraftIntensityFilter] = React.useState(intensityFilter);
+  const [isFilterModalOpen, setIsFilterModalOpen] = React.useState(false);
+  const [draftStateFilter, setDraftStateFilter] = React.useState(stateFilter);
+  const [draftBikingFilter, setDraftBikingFilter] = React.useState(bikingFilter);
+  const [draftEquestrianFilter, setDraftEquestrianFilter] = React.useState(equestrianFilter);
+  const [draftWheelchairFilter, setDraftWheelchairFilter] = React.useState(wheelchairFilter);
+  const [draftPetsFilter, setDraftPetsFilter] = React.useState(petsFilter);
+  const [draftLengthOp, setDraftLengthOp] = React.useState(lengthOp);
+  const [draftLengthValue, setDraftLengthValue] = React.useState(lengthValue);
+  const [draftEGainOp, setDraftEGainOp] = React.useState(eGainOp);
+  const [draftEGainValue, setDraftEGainValue] = React.useState(eGainValue);
+  const [draftIntensityFilter, setDraftIntensityFilter] = React.useState(intensityFilter);
 
   const openFilters = function () {
     setDraftStateFilter(stateFilter);
@@ -473,37 +474,30 @@ function TrailDirectory(props) {
     setDraftEquestrianFilter(equestrianFilter);
     setDraftWheelchairFilter(wheelchairFilter);
     setDraftPetsFilter(petsFilter);
-
     setDraftLengthOp(lengthOp);
     setDraftLengthValue(lengthValue);
     setDraftEGainOp(eGainOp);
     setDraftEGainValue(eGainValue);
     setDraftIntensityFilter(intensityFilter);
-
     setIsFilterModalOpen(true);
   };
 
-  
   const applyFilters = function () {
     setStateFilter(draftStateFilter);
     setBikingFilter(draftBikingFilter);
     setEquestrianFilter(draftEquestrianFilter);
     setWheelchairFilter(draftWheelchairFilter);
     setPetsFilter(draftPetsFilter);
-
     setLengthOp(draftLengthOp);
     setLengthValue(draftLengthValue);
     setEGainOp(draftEGainOp);
     setEGainValue(draftEGainValue);
     setIntensityFilter(draftIntensityFilter);
-
     setIsFilterModalOpen(false);
   };
 
-  
   const clearFilters = function () {
     const defaultState = "All";
-
     setStateFilter(defaultState);
     setBikingFilter("None");
     setEquestrianFilter("None");
@@ -514,7 +508,6 @@ function TrailDirectory(props) {
     setEGainOp("None");
     setEGainValue("");
     setIntensityFilter("All");
-
 
     setDraftStateFilter(defaultState);
     setDraftBikingFilter("None");
@@ -528,16 +521,16 @@ function TrailDirectory(props) {
     setDraftIntensityFilter("All");
   };
 
-  // Dynamic zoom: continuous logarithmic formula, no fixed steps
-  // zoom = log2(K / spread), clamped to [6.5, 19]
-  // K=820 calibrated so spread≈0.05° → zoom 14, spread≈1° → zoom ~9.7
   var getZoomForSpread = function (spread) {
     if (spread <= 0) return 15;
     var zoom = Math.log2(820 / spread);
     return Math.max(6.5, Math.min(19, zoom));
   };
 
-  // Zoom the map to fit an array of {lat, long} objects with consistent behavior
+  const mapRef = React.useRef(null);
+  const graphicsLayerRef = React.useRef(null);
+  const mapContainerRef = React.useRef(null);
+
   var zoomToPoints = function (coords) {
     if (!mapRef.current || coords.length === 0) return;
 
@@ -564,40 +557,22 @@ function TrailDirectory(props) {
     );
   };
 
-  const zoomToTrail = function (t) {
-    if (!mapRef.current) return;
-
-    // find all filtered trails with the same projectName that have valid coords
-    const siblings = filtered.filter(function (s) {
-      return s.projectName === t.projectName && s.lat !== -100 && s.long !== -200;
-    });
-
-    setHighlightedProject(t.projectName);
-
-    if (siblings.length === 0) return;
-
-    zoomToPoints(siblings);
-  };
-
-  const mapRef = React.useRef(null);
-  const graphicsLayerRef = React.useRef(null);
-
-  const filtered = trails.filter(t => {
+  const filtered = trails.filter(function (t) {
     let stateMatch = false;
+
     if (useLocationFilter && userLoc) {
       if (t.lat === -100 || t.long === -200) return false;
       if (distanceMiles(userLoc.lat, userLoc.long, t.lat, t.long) > radius) return false;
     }
-    
+
     if (stateFilter === "All") stateMatch = true;
-    else if (stateFilter === "TX" && trailsByState.TX.includes(t)) stateMatch = true;
-    else if (stateFilter === "OK" && trailsByState.OK.includes(t)) stateMatch = true;
-    else if (stateFilter === "KS" && trailsByState.KS.includes(t)) stateMatch = true;
-    
-    
+    else if (stateFilter === "TX" && (trailData.TX || []).includes(t)) stateMatch = true;
+    else if (stateFilter === "OK" && (trailData.OK || []).includes(t)) stateMatch = true;
+    else if (stateFilter === "KA" && (trailData.KA || []).includes(t)) stateMatch = true;
+
     if (!stateMatch) return false;
 
-    const matchYesNo = (value, filter) => {
+    const matchYesNo = function (value, filter) {
       if (filter === "None") return true;
       if (!value) return false;
       return value.toLowerCase() === filter.toLowerCase();
@@ -608,27 +583,22 @@ function TrailDirectory(props) {
     if (!matchYesNo(t.isWheelchair, wheelchairFilter)) return false;
     if (!matchYesNo(t.isPet, petsFilter)) return false;
 
-    const matchNumber = (value, op, targetRaw) => {
+    const matchNumber = function (value, op, targetRaw) {
       if (op === "None" || targetRaw === "") return true;
-
       const target = Number(targetRaw);
       if (isNaN(target)) return true;
-
       if (value === -1 || value === null || value === undefined) return false;
 
       const v = Number(value);
-
       if (op === "<") return v < target;
       if (op === ">") return v > target;
       if (op === "=") return v === target;
-
       return true;
     };
 
     if (!matchNumber(t.length, lengthOp, lengthValue)) return false;
     if (!matchNumber(t.eGain, eGainOp, eGainValue)) return false;
 
-    // intensity filter
     if (intensityFilter !== "All") {
       var tIntensity = (t.intensity || "").toLowerCase();
       var fIntensity = intensityFilter.toLowerCase();
@@ -639,7 +609,6 @@ function TrailDirectory(props) {
       }
     }
 
-    // search filter
     if (searchQuery.trim() !== "") {
       var q = searchQuery.trim().toLowerCase();
       var nameMatch = (t.projectName || "").toLowerCase().indexOf(q) !== -1;
@@ -650,19 +619,29 @@ function TrailDirectory(props) {
     return true;
   });
 
-  // Reset visible count when filters/sort/search change
+  const zoomToTrail = function (t) {
+    if (!mapRef.current) return;
+
+    const siblings = filtered.filter(function (s) {
+      return s.projectName === t.projectName && s.lat !== -100 && s.long !== -200;
+    });
+
+    setHighlightedProject(t.projectName);
+
+    if (siblings.length === 0) return;
+    zoomToPoints(siblings);
+  };
+
   React.useEffect(function () {
     setVisibleCount(30);
   }, [stateFilter, bikingFilter, equestrianFilter, wheelchairFilter, petsFilter,
       lengthOp, lengthValue, eGainOp, eGainValue, intensityFilter, searchQuery,
       sortBy, highlightedProject]);
 
-  // Infinite scroll handler on list panel
   React.useEffect(function () {
     var panel = listPanelRef.current;
     if (!panel) return;
     var onScroll = function () {
-      // load more when within 200px of bottom
       if (panel.scrollTop + panel.clientHeight >= panel.scrollHeight - 200) {
         setVisibleCount(function (prev) { return prev + 20; });
       }
@@ -671,7 +650,6 @@ function TrailDirectory(props) {
     return function () { panel.removeEventListener("scroll", onScroll); };
   }, []);
 
-  // Wire up header search input
   React.useEffect(function () {
     var input = document.getElementById("header-search-input");
     if (!input) return;
@@ -680,8 +658,7 @@ function TrailDirectory(props) {
     return function () { input.removeEventListener("input", handler); };
   }, []);
 
-  // Initialize map once
-  React.useEffect(() => {
+  React.useEffect(function () {
     require(
       [
         "esri/Map",
@@ -691,12 +668,14 @@ function TrailDirectory(props) {
       ],
       function (Map, MapView, Graphic, GraphicsLayer) {
         const map = new Map({ basemap: "topo-vector" });
-        // Compute initial center/zoom from all filtered trails with valid coords
+
         var initCoords = filtered.filter(function (t) {
           return t.lat !== -100 && t.long !== -200;
         });
+
         var initCenter = [-96, 35.5];
         var initZoom = 6;
+
         if (initCoords.length > 0) {
           var iLats = initCoords.map(function (c) { return c.lat; });
           var iLongs = initCoords.map(function (c) { return c.long; });
@@ -710,10 +689,16 @@ function TrailDirectory(props) {
         }
 
         const view = new MapView({
-          container: "map",
+          container: mapContainerRef.current,
           map: map,
           center: initCenter,
           zoom: initZoom
+        });
+
+        view.when(function () {
+          setTimeout(function () {
+            if (view) view.resize();
+          }, 150);
         });
 
         const graphicsLayer = new GraphicsLayer();
@@ -722,7 +707,6 @@ function TrailDirectory(props) {
         graphicsLayerRef.current = graphicsLayer;
         mapRef.current = view;
 
-        // Click a marker → zoom to fit all trails for that project + filter list
         view.on("click", function (event) {
           view.hitTest(event).then(function (response) {
             var hit = response.results.find(function (r) {
@@ -732,7 +716,6 @@ function TrailDirectory(props) {
               var name = hit.graphic.popupTemplate.title;
               setHighlightedProject(name);
 
-              // collect all graphics on this layer that share the same project
               var coords = graphicsLayer.graphics.filter(function (g) {
                 return g.popupTemplate && g.popupTemplate.title === name;
               }).map(function (g) {
@@ -744,7 +727,6 @@ function TrailDirectory(props) {
           });
         });
 
-        // Initial markers (for the initial filter)
         filtered.forEach(function (t) {
           if (t.lat !== -100 && t.long !== -200) {
             const point = { type: "point", longitude: t.long, latitude: t.lat };
@@ -767,27 +749,59 @@ function TrailDirectory(props) {
         });
       }
     );
-
-    
   }, []);
 
   React.useEffect(function () {
     if (!userLoc) return;
     if (!mapRef.current) return;
-  
+
     mapRef.current.goTo(
       { center: [userLoc.long, userLoc.lat], zoom: 9 },
       { duration: 600, easing: "ease-in-out" }
     );
   }, [userLoc]);
 
-  // update markers whenever filter result or highlight changes
-  React.useEffect(() => {
+  React.useEffect(function () {
+    if (!mapRef.current) return;
+
+    if (selectedTrail) {
+      mapRef.current.container = null;
+      return;
+    }
+
+    if (mapContainerRef.current) {
+      mapRef.current.container = mapContainerRef.current;
+
+      setTimeout(function () {
+        if (mapRef.current) {
+          mapRef.current.resize();
+        }
+      }, 200);
+    }
+  }, [selectedTrail]);
+
+  React.useEffect(function () {
+    const handleResize = function () {
+      if (mapRef.current) {
+        setTimeout(function () {
+          if (mapRef.current) {
+            mapRef.current.resize();
+          }
+        }, 150);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return function () {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
+  React.useEffect(function () {
     if (!graphicsLayerRef.current) return;
 
     graphicsLayerRef.current.removeAll();
 
-    // Group filtered trails by project for cluster markers
     var markerGroups = {};
     filtered.forEach(function (t) {
       if (t.lat !== -100 && t.long !== -200) {
@@ -805,7 +819,6 @@ function TrailDirectory(props) {
         var isHL = highlightedProject && projectName === highlightedProject;
 
         if (isHL) {
-          // Highlighted project — show individual trailhead markers
           group.forEach(function (t) {
             var pt = { type: "point", longitude: t.long, latitude: t.lat };
             var sym = {
@@ -821,7 +834,6 @@ function TrailDirectory(props) {
             }));
           });
         } else if (count === 1) {
-          // Single trail — normal marker
           var point = { type: "point", longitude: group[0].long, latitude: group[0].lat };
           var symbol = {
             type: "simple-marker",
@@ -835,7 +847,6 @@ function TrailDirectory(props) {
             popupTemplate: { title: projectName, content: group[0].areaName }
           }));
         } else {
-          // Multi-trail — cluster circle with count
           var avgLat = group.reduce(function (s, t) { return s + t.lat; }, 0) / count;
           var avgLong = group.reduce(function (s, t) { return s + t.long; }, 0) / count;
           var clusterPt = { type: "point", longitude: avgLong, latitude: avgLat };
@@ -852,7 +863,6 @@ function TrailDirectory(props) {
             popupTemplate: { title: projectName, content: count + " trails" }
           }));
 
-          // Count label on top
           var textSymbol = {
             type: "text",
             text: String(count),
@@ -873,7 +883,6 @@ function TrailDirectory(props) {
     });
   }, [filtered, highlightedProject]);
 
-  // If a trail is selected, show the detail "page"
   if (selectedTrail) {
     return React.createElement(TrailDetail, {
       trail: selectedTrail,
@@ -881,7 +890,6 @@ function TrailDirectory(props) {
     });
   }
 
-  // helper: intensity → badge class
   var badgeClass = function (intensity) {
     if (!intensity) return "badge badge-unknown";
     var lower = intensity.toLowerCase();
@@ -891,13 +899,11 @@ function TrailDirectory(props) {
     return "badge badge-unknown";
   };
 
-  // visible trail list (applying project highlight filter)
   var displayTrails = filtered.filter(function (t) {
     if (!highlightedProject) return true;
     return t.projectName === highlightedProject;
   });
 
-  // Build project groups for the grouped (browsing) view
   var projectGroupMap = {};
   displayTrails.forEach(function (t) {
     if (!projectGroupMap[t.projectName]) {
@@ -907,9 +913,7 @@ function TrailDirectory(props) {
   });
   var projectGroups = Object.keys(projectGroupMap).map(function (k) { return projectGroupMap[k]; });
 
-  // sort
   if (highlightedProject) {
-    // Sort individual trails within the highlighted project
     displayTrails = displayTrails.slice().sort(function (a, b) {
       if (sortBy === "name") return (a.areaName || "").localeCompare(b.areaName || "");
       if (sortBy === "length") return (b.length || 0) - (a.length || 0);
@@ -917,7 +921,6 @@ function TrailDirectory(props) {
       return 0;
     });
   } else {
-    // Sort project groups
     projectGroups.sort(function (a, b) {
       if (sortBy === "name") return (a.projectName || "").localeCompare(b.projectName || "");
       if (sortBy === "length") {
@@ -934,18 +937,14 @@ function TrailDirectory(props) {
     });
   }
 
-  // counts for infinite scroll
   var totalTrails = highlightedProject ? displayTrails.length : projectGroups.length;
 
-  // check if any advanced filters are active (for the "All filters" chip)
   var hasAdvancedFilters = bikingFilter !== "None" || equestrianFilter !== "None" ||
     wheelchairFilter !== "None" || petsFilter !== "None" ||
     lengthOp !== "None" || eGainOp !== "None";
 
-  // Otherwise show the directory view
   return React.createElement("div", null,
 
-    // Modal (floats above everything)
     isFilterModalOpen && React.createElement(
       "div",
       { className: "modal-backdrop" },
@@ -964,7 +963,7 @@ function TrailDirectory(props) {
             React.createElement("option", null, "All"),
             React.createElement("option", null, "TX"),
             React.createElement("option", null, "OK"),
-            React.createElement("option", null, "KS")
+            React.createElement("option", null, "KA")
           )
         ),
 
@@ -1094,10 +1093,8 @@ function TrailDirectory(props) {
       )
     ),
 
-    // ── Side-by side layout ──
     React.createElement("div", { className: "app-layout" },
 
-      
       React.createElement("div", { className: "list-panel", ref: listPanelRef },
 
         props.onBackToLanding && React.createElement(
@@ -1116,13 +1113,10 @@ function TrailDirectory(props) {
           },
           "← Back to Home"
         ),
-        
-        // Panel heading
+
         React.createElement("div", { className: "panel-title" }, "Explore trails"),
 
-        // Filter chips row
         React.createElement("div", { className: "filter-chips" },
-          // State chip
           React.createElement("select", {
             className: "filter-chip" + (stateFilter !== "All" ? " active" : ""),
             value: stateFilter,
@@ -1131,10 +1125,9 @@ function TrailDirectory(props) {
             React.createElement("option", { value: "All" }, "All States"),
             React.createElement("option", { value: "TX" }, "Texas"),
             React.createElement("option", { value: "OK" }, "Oklahoma"),
-            React.createElement("option", { value: "KS" }, "Kansas")
+            React.createElement("option", { value: "KA" }, "Kansas")
           ),
 
-          // Difficulty chip
           React.createElement("select", {
             className: "filter-chip" + (intensityFilter !== "All" ? " active" : ""),
             value: intensityFilter,
@@ -1146,15 +1139,13 @@ function TrailDirectory(props) {
             React.createElement("option", { value: "Hard" }, "Hard")
           ),
 
-          // All filters button
           React.createElement("button", {
             type: "button",
             className: "filter-chip-btn" + (hasAdvancedFilters ? " active" : ""),
             onClick: openFilters
-          }, "\u2699 All filters")
+          }, "⚙ All filters")
         ),
 
-        // "Show all" bar when a project is focused
         highlightedProject && React.createElement(
           "div",
           { className: "show-all-bar" },
@@ -1166,7 +1157,6 @@ function TrailDirectory(props) {
             type: "button",
             onClick: function () {
               setHighlightedProject(null);
-              // Zoom to fit all filtered trails
               var allCoords = filtered.filter(function (t) {
                 return t.lat !== -100 && t.long !== -200;
               });
@@ -1175,7 +1165,6 @@ function TrailDirectory(props) {
           }, "Show all")
         ),
 
-        // Trail count + sort row
         React.createElement("div", { className: "trail-meta-row" },
           React.createElement("div", { className: "trail-count" },
             highlightedProject
@@ -1194,13 +1183,10 @@ function TrailDirectory(props) {
           )
         ),
 
-        // ── Cards ──
         highlightedProject
-          ? // Individual trail cards when a project is selected
-            displayTrails.slice(0, visibleCount).map(function (t, i) {
+          ? displayTrails.slice(0, visibleCount).map(function (t, i) {
               var intensityLabel = t.intensity || "Unknown";
 
-              // build access tags
               var tags = [];
               if (t.isWalking === "Yes") tags.push({ label: "Walking", yes: true });
               if (t.isBiking === "Yes") tags.push({ label: "Biking", yes: true });
@@ -1214,20 +1200,16 @@ function TrailDirectory(props) {
                   key: i,
                   className: "trail-card highlighted"
                 },
-
-                // Title (area name, since project name is in the "Show all" bar)
                 React.createElement("h2", null, t.areaName || t.projectName || "Unnamed Trail"),
 
-                // Stats row: badge + length + elev
                 React.createElement("div", { className: "card-stats" },
                   React.createElement("span", { className: badgeClass(t.intensity) }, intensityLabel),
-                  React.createElement("span", { className: "stat-sep" }, "\u00b7"),
+                  React.createElement("span", { className: "stat-sep" }, "·"),
                   React.createElement("span", null, t.length !== -1 ? t.length + " mi" : "-- mi"),
-                  React.createElement("span", { className: "stat-sep" }, "\u00b7"),
+                  React.createElement("span", { className: "stat-sep" }, "·"),
                   React.createElement("span", null, t.eGain !== -1 ? t.eGain + " ft gain" : "-- ft gain")
                 ),
 
-                // Access tags
                 tags.length > 0 && React.createElement("div", { className: "card-tags" },
                   tags.map(function (tag, j) {
                     return React.createElement("span", {
@@ -1237,7 +1219,6 @@ function TrailDirectory(props) {
                   })
                 ),
 
-                // Bottom row: link + View Details
                 React.createElement("div", { className: "card-bottom" },
                   t.infoLink
                     ? React.createElement("a", {
@@ -1252,22 +1233,19 @@ function TrailDirectory(props) {
                       e.stopPropagation();
                       setSelectedTrail(t);
                     }
-                  }, "View Details \u2192")
+                  }, "View Details →")
                 )
               );
             })
-          : // Project group cards when browsing all parks
-            projectGroups.slice(0, visibleCount).map(function (group, i) {
+          : projectGroups.slice(0, visibleCount).map(function (group, i) {
               var count = group.trails.length;
 
-              // Collect unique area names
               var areas = [];
               group.trails.forEach(function (t) {
                 if (t.areaName && areas.indexOf(t.areaName) === -1) areas.push(t.areaName);
               });
               var areaText = areas.slice(0, 2).join(", ") + (areas.length > 2 ? " +" + (areas.length - 2) + " more" : "");
 
-              // Difficulty summary
               var difficulties = {};
               group.trails.forEach(function (t) {
                 var d = (t.intensity || "Unknown").toLowerCase();
@@ -1281,19 +1259,14 @@ function TrailDirectory(props) {
                   key: i,
                   className: "trail-card",
                   onClick: function () {
-                    setHighlightedProject(group.projectName);                          
-                    zoomToTrail(group.trails[0]);              
+                    setHighlightedProject(group.projectName);
+                    zoomToTrail(group.trails[0]);
                   }
-                  
                 },
 
-                // Project name
                 React.createElement("h2", null, group.projectName || "Unnamed"),
-
-                // Area names
                 React.createElement("div", { className: "card-area" }, areaText),
 
-                // Stats row: trail count + difficulty badges
                 React.createElement("div", { className: "card-stats" },
                   React.createElement("span", {
                     style: {
@@ -1313,23 +1286,20 @@ function TrailDirectory(props) {
                   })
                 ),
 
-                // Bottom row: View trails button
                 React.createElement("div", { className: "card-bottom" },
                   React.createElement("span", null),
                   React.createElement("button", {
                     className: "view-details-btn",
                     onClick: function (e) {
                       e.stopPropagation();
-                      setHighlightedProject(group.projectName);                           
-                      zoomToTrail(group.trails[0]);               
+                      setHighlightedProject(group.projectName);
+                      zoomToTrail(group.trails[0]);
                     }
-                    
-                  }, "View trails \u2192")
+                  }, "View trails →")
                 )
               );
             }),
 
-        // Loading indicator / end of list
         visibleCount < totalTrails
           ? React.createElement("div", {
               style: { textAlign: "center", padding: "12px", color: "#6b7280", fontSize: "0.8rem" }
@@ -1339,9 +1309,11 @@ function TrailDirectory(props) {
             }, "End of list")
       ),
 
-      // RIGHT: map
       React.createElement("div", { className: "map-layer" },
-        React.createElement("div", { id: "map" })
+        React.createElement("div", {
+          id: "map",
+          ref: mapContainerRef
+        })
       )
     )
   );
@@ -1450,7 +1422,6 @@ function LandingPage(props) {
       Object.keys(groups).forEach(function (name) {
         const arr = groups[name];
         const count = arr.length;
-
         const avgLat = arr.reduce((s, x) => s + x.lat, 0) / count;
         const avgLong = arr.reduce((s, x) => s + x.long, 0) / count;
 
@@ -1662,6 +1633,6 @@ function App() {
 }
 
 ReactDOM.render(
-  React.createElement(App,null),
+  React.createElement(App, null),
   document.getElementById("root")
 );

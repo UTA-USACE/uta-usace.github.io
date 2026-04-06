@@ -530,6 +530,7 @@ function TrailDirectory(props) {
   const mapRef = React.useRef(null);
   const graphicsLayerRef = React.useRef(null);
   const mapContainerRef = React.useRef(null);
+  const filteredRef = React.useRef([]);
 
   var zoomToPoints = function (coords) {
     if (!mapRef.current || coords.length === 0) return;
@@ -633,6 +634,10 @@ function TrailDirectory(props) {
   };
 
   React.useEffect(function () {
+    filteredRef.current = filtered;
+  }, [filtered]);
+
+  React.useEffect(function () {
     setVisibleCount(30);
   }, [stateFilter, bikingFilter, equestrianFilter, wheelchairFilter, petsFilter,
       lengthOp, lengthValue, eGainOp, eGainValue, intensityFilter, searchQuery,
@@ -713,14 +718,31 @@ function TrailDirectory(props) {
               return r.graphic && r.graphic.layer === graphicsLayer;
             });
             if (hit) {
-              var name = hit.graphic.popupTemplate.title;
+              var attrs = hit.graphic.attributes || {};
+              var name = attrs.projectName || (hit.graphic.popupTemplate && hit.graphic.popupTemplate.title);
+              if (!name) return;
+
               setHighlightedProject(name);
 
-              var coords = graphicsLayer.graphics.filter(function (g) {
-                return g.popupTemplate && g.popupTemplate.title === name;
-              }).map(function (g) {
-                return { lat: g.geometry.latitude, long: g.geometry.longitude };
-              }).toArray();
+              var coords = filteredRef.current.filter(function (t) {
+                return t.projectName === name && t.lat !== -100 && t.long !== -200;
+              }).map(function (t) {
+                return { lat: t.lat, long: t.long };
+              });
+
+              if (coords.length === 0) {
+                coords = graphicsLayer.graphics.filter(function (g) {
+                  return g.popupTemplate && g.popupTemplate.title === name;
+                }).map(function (g) {
+                  return { lat: g.geometry.latitude, long: g.geometry.longitude };
+                }).toArray();
+              }
+
+              var isParkClick = attrs.kind === "cluster" || attrs.kind === "cluster-label";
+              if (isParkClick && coords.length > 1) {
+                event.stopPropagation();
+                if (view.popup) view.popup.close();
+              }
 
               zoomToPoints(coords);
             }
@@ -742,6 +764,11 @@ function TrailDirectory(props) {
             const graphic = new Graphic({
               geometry: point,
               symbol: symbol,
+              attributes: {
+                projectName: t.projectName,
+                kind: "trail",
+                areaName: t.areaName
+              },
               popupTemplate: popupTemplate
             });
             graphicsLayer.add(graphic);
@@ -830,6 +857,11 @@ function TrailDirectory(props) {
             graphicsLayerRef.current.add(new Graphic({
               geometry: pt,
               symbol: sym,
+              attributes: {
+                projectName: projectName,
+                kind: "trail",
+                areaName: t.areaName
+              },
               popupTemplate: { title: projectName, content: t.areaName }
             }));
           });
@@ -844,11 +876,22 @@ function TrailDirectory(props) {
           graphicsLayerRef.current.add(new Graphic({
             geometry: point,
             symbol: symbol,
+            attributes: {
+              projectName: projectName,
+              kind: "trail",
+              areaName: group[0].areaName
+            },
             popupTemplate: { title: projectName, content: group[0].areaName }
           }));
         } else {
           var avgLat = group.reduce(function (s, t) { return s + t.lat; }, 0) / count;
           var avgLong = group.reduce(function (s, t) { return s + t.long; }, 0) / count;
+          var latVals = group.map(function (t) { return t.lat; });
+          var longVals = group.map(function (t) { return t.long; });
+          var minLat = Math.min.apply(null, latVals);
+          var maxLat = Math.max.apply(null, latVals);
+          var minLong = Math.min.apply(null, longVals);
+          var maxLong = Math.max.apply(null, longVals);
           var clusterPt = { type: "point", longitude: avgLong, latitude: avgLat };
 
           var circleSymbol = {
@@ -860,6 +903,15 @@ function TrailDirectory(props) {
           graphicsLayerRef.current.add(new Graphic({
             geometry: clusterPt,
             symbol: circleSymbol,
+            attributes: {
+              projectName: projectName,
+              kind: "cluster",
+              trailCount: count,
+              minLat: minLat,
+              maxLat: maxLat,
+              minLong: minLong,
+              maxLong: maxLong
+            },
             popupTemplate: { title: projectName, content: count + " trails" }
           }));
 
@@ -876,6 +928,15 @@ function TrailDirectory(props) {
           graphicsLayerRef.current.add(new Graphic({
             geometry: clusterPt,
             symbol: textSymbol,
+            attributes: {
+              projectName: projectName,
+              kind: "cluster-label",
+              trailCount: count,
+              minLat: minLat,
+              maxLat: maxLat,
+              minLong: minLong,
+              maxLong: maxLong
+            },
             popupTemplate: { title: projectName, content: count + " trails" }
           }));
         }
